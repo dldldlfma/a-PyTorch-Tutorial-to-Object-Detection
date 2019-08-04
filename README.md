@@ -112,8 +112,6 @@ I'm using `PyTorch 0.4` in `Python 3.6`.
 
 * **Multibox**. 이건 회기문제(regression problem)로 객체의 검출상자(object's bounding box) 예측값을 계산하는  [기술](https://arxiv.org/abs/1312.2249) 이다. 검출된 객체의 좌표는 정답에 해당하는 ground truth's의 좌표로 회귀된다. 게다가, 각 predicted box에 대해서, 다양한 객체 종류에 대한 점수가 생성된다. 사전확률은 정답(ground truth)를 모델로 하기 때문에 예측을 위한 시작점 역할을 한다. 그러므로, 많은 예측 상자가 존재할것이고 그것들은 대부분 객체를 담고 있지 않을 것 입니다.
 
-* **Hard Negative Mining**. This refers to explicitly choosing the most egregious false positives predicted by a model and forcing it to learn from these examples. In other words, we are mining only those negatives that the model found _hardest_ to identify correctly. In the context of object detection, where the vast majority of predicted boxes do not contain an object, this also serves to reduce the negative-positive imbalance.
-
 * **Hard Negative Mining**. 본 예제에서 이 것(Hard Negative Mining)은 직접적으로 모델로 부터 나온 매우 어려운 false positive 예측을 보내고 이것을 학습하도록 강요합니다. 다른 말로 하면, 우리는 모델이 식별하기 매우 어려운 negative만들 모아서 학습한다는 말입니다. 객체 검출 과정에서, 대부분의 predicted box들은 객체가 포함되어 있지 않기에 이 것은 negative-positive 사이의 불균형을 바로잡는 역할을 합니다.
 
 
