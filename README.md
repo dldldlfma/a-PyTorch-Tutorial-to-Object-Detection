@@ -2,9 +2,10 @@ This is a **[PyTorch](https://pytorch.org) Tutorial to Object Detection**.
 
 This is the third in [a series of tutorials](https://github.com/sgrvinod/Deep-Tutorials-for-PyTorch) I'm writing about _implementing_ cool models on your own with the amazing PyTorch library.
 
-Basic knowledge of PyTorch, convolutional neural networks is assumed.
+Pytorch와 CNN에 대한 기본적인 이해가 필요합니다. 
 
-If you're new to PyTorch, first read [Deep Learning with PyTorch: A 60 Minute Blitz](https://pytorch.org/tutorials/beginner/deep_learning_60min_blitz.html) and [Learning PyTorch with Examples](https://pytorch.org/tutorials/beginner/pytorch_with_examples.html).
+Pytorch를 해본적이 없다면 다음 두가지를 참고하세요.
+[Deep Learning with PyTorch: A 60 Minute Blitz](https://pytorch.org/tutorials/beginner/deep_learning_60min_blitz.html) and [Learning PyTorch with Examples](https://pytorch.org/tutorials/beginner/pytorch_with_examples.html).
 
 Questions, suggestions, or corrections can be posted as issues.
 
@@ -30,15 +31,17 @@ I'm using `PyTorch 0.4` in `Python 3.6`.
 
 # Objective
 
-**To build a model that can detect and localize specific objects in images.**
+
+**이미지 속 물체가 무엇이고 어디에 있는지 검출하기 위한 모델을 빌드하기위해서**
 
 <p align="center">
 <img src="./img/baseball.gif">
 </p>
 
-We will be implementing the [Single Shot Multibox Detector (SSD)](https://arxiv.org/abs/1512.02325), a popular, powerful, and especially nimble network for this task. The authors' original implementation can be found [here](https://github.com/weiliu89/caffe/tree/ssd).
+우린 Object Detection분야에서 인기있고, 강력하며 특히 빠른 [Single Shot Multibox Detector (SSD)](https://arxiv.org/abs/1512.02325)를 수행해 볼겁니다. 저자가 작성한 실행 가능한 원본은 다음 주소에서 찾을수 있습니다. [here](https://github.com/weiliu89/caffe/tree/ssd).
 
-Here are some examples of object detection in images not seen during training –
+
+다음은 트레이닝에 사용하지 않았던 그림을 통한 몇가지 예시 입니다. 
 
 ---
 
@@ -90,7 +93,7 @@ Here are some examples of object detection in images not seen during training �
 
 ---
 
-There are more examples at the [end of the tutorial](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Object-Detection#some-more-examples).
+이곳에 몇가지 예시가 더 있습니다. [end of the tutorial](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Object-Detection#some-more-examples).
 
 ---
 
@@ -98,82 +101,89 @@ There are more examples at the [end of the tutorial](https://github.com/sgrvinod
 
 * **Object Detection**. duh.
 
-* **Single-Shot Detection**. Earlier architectures for object detection consisted of two distinct stages – a region proposal network that performs object localization and a classifier for detecting the types of objects in the proposed regions. Computationally, these can be very expensive and therefore ill-suited for real-world, real-time applications. Single-shot models encapsulate both localization and detection tasks in a single forward sweep of the network, resulting in significantly faster detections while deployable on lighter hardware.
+* **Single-Shot Detection**. 이 전의 객체 검출 구조는 두 개의 구분된 단계를 가지고 있었습니다. 물체의 위치를 제안하는 위치 제안 네트워크(region proposal network)와 제안된 위치에서 물체의 종류를 결정하는 구분자(classifier) 두가지 였습니다. 계산적으로, 이런 구조는 매우 많은 연산을 필요로 하며 실제 세상에서 실시간으로 사용하기 어렵습니다. Single-shot models 은 localization과 detection 작업을 단일 네트워크의 단일 forward 연산을 통해서 해결합니다. 결과적으로 상당히 빠르게 수행할 수 있으며 연산능력이 적은 Hardware에서도 수행가능해 집니다..
 
-* **Multiscale Feature Maps**. In image classification tasks, we base our predictions on the final convolutional feature map – the smallest but deepest representation of the original image. In object detection, feature maps from intermediate convolutional layers can also be _directly_ useful because they represent the original image at different scales. Therefore, a fixed-size filter operating on different feature maps will be able to detect objects of various sizes.
 
-* **Priors**. These are pre-computed boxes defined at specific positions on specific feature maps, with specific aspect ratios and scales. They are carefully chosen to match the characteristics of objects' bounding boxes (i.e. the ground truths) in the dataset.
+* **Multiscale Feature Maps**. 이미지 분류 작업에서, 우리는 CNN의 마지막 출력(final convolutional feature map)을 사용합니다. 이는 가장 작지만 원래 이미지의 가장 깊은 표현입니다. 객체 검출에서, 네트워크의 중간에 있는 Convolutional layer의 feature maps은 원래 이미지 대비 다양한 크기에서의 특징을 담고 있어서 객체 검출에서 쓸만합니다. 그러므로, 크기가 다른 다양한 feature maps에서 고정된 크기의 filter의 동작은 다양한 크기의 객체 검출을 가능하게 할것입니다.
 
-* **Multibox**. This is [a technique](https://arxiv.org/abs/1312.2249) that formulates predicting an object's bounding box as a _regression_ problem, wherein a detected object's coordinates are regressed to its ground truth's coordinates. In addition, for each predicted box, scores are generated for various object types. Priors serve as feasible starting points for predictions because they are modeled on the ground truths. Therefore, there will be as many predicted boxes as there are priors, most of whom will contain no object.
+
+* **Priors**. 이것들은 명확한 feature maps위, 명확한 위치에 명확한 크기 및 비율로 정의되어 있는 pre-computed boxes입니다. pre-computed box들은 데이터셋안에 있는 객체표시상자(object's bounding box)의 특성과 match하기 위해서 조심스럽게 선택됩니다.  (Priors : 사전 확률 or 사전 예측)
+
+
+* **Multibox**. 이건 회기문제(regression problem)로 객체의 검출상자(object's bounding box) 예측값을 계산하는  [기술](https://arxiv.org/abs/1312.2249) 이다. 검출된 객체의 좌표는 정답에 해당하는 ground truth's의 좌표로 회귀된다. 게다가, 각 predicted box에 대해서, 다양한 객체 종류에 대한 점수가 생성된다. 사전확률은 정답(ground truth)를 모델로 하기 때문에 예측을 위한 시작점 역할을 한다. 그러므로, 많은 예측 상자가 존재할것이고 그것들은 대부분 객체를 담고 있지 않을 것 입니다.
 
 * **Hard Negative Mining**. This refers to explicitly choosing the most egregious false positives predicted by a model and forcing it to learn from these examples. In other words, we are mining only those negatives that the model found _hardest_ to identify correctly. In the context of object detection, where the vast majority of predicted boxes do not contain an object, this also serves to reduce the negative-positive imbalance.
 
-* **Non-Maximum Suppression**. At any given location, multiple priors can overlap significantly. Therefore, predictions arising out of these priors could actually be duplicates of the same object. Non-Maximum Suppression (NMS) is a means to remove redundant predictions by suppressing all but the one with the maximum score.
+* **Hard Negative Mining**. 본 예제에서 이 것(Hard Negative Mining)은 직접적으로 모델로 부터 나온 매우 어려운 false positive 예측을 보내고 이것을 학습하도록 강요합니다. 다른 말로 하면, 우리는 모델이 식별하기 매우 어려운 negative만들 모아서 학습한다는 말입니다. 객체 검출 과정에서, 대부분의 predicted box들은 객체가 포함되어 있지 않기에 이 것은 negative-positive 사이의 불균형을 바로잡는 역할을 합니다.
+
+
+* **Non-Maximum Suppression**. 주어진 어떤 위치에서도, 다중 예측은 상당히 겹칠 것이다. 그러므로, 사전예측(priors)들은 사실 같은 객체의 사본이 될수 있다. 비최대억제 (Non-Maximum Suppression = NMS) 는 가장 높은 점수를 받은 한개를 제외하고 다른 것들을 억제함으로써 겹치는 예측을 제거하는 것을 말한다. 
 
 # Overview
 
-In this section, I will present an overview of this model. If you're already familiar with it, you can skip straight to the [Implementation](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Object-Detection#implementation) section or the commented code.
 
-As we proceed, you will notice that there's a fair bit of engineering that's resulted in the SSD's very specific structure and formulation. Don't worry if some aspects of it seem contrived or unspontaneous at first. Remember, it's built upon _years_ of (often empirical) research in this field.
+여기서는, 이 모델을 설명할 것이다. 만약 너가 이미 이것에 대해 잘알고 있다면, 여기를 생략하고 [Implementation](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Object-Detection#implementation) section이나 the commented code로 넘어가도 좋다.
 
-### Some definitions
+이 과정에서, 당신은 SSD가 매우 구체적인 구조와 공식을 가지고 있을수 있도록 하는 정당한 공학적 과정이 있음을 알 수 있을 것이다.어떤 부분이 처음에는 무의미하거나 인위적으로 보일수도 있지만,이 것은 이 분야에서 몇년동안(종종 경험적으로) 긴 연구를 통해 만들어진 것임을 기억하자.
 
-A box is a box. A _bounding_ box is a box that wraps around an object i.e. represents its bounds.
+### 몇가지 정의(Some definitions)
 
-In this tutorial, we will encounter both types – just boxes and bounding boxes. But all boxes are represented on images and we need to be able to measure their positions, shapes, sizes, and other properties.
+A box 는 상자다. A 경계상자(_bounding_ box) 는 객체 주변을 감싸고 있는 상자다. 즉, 그 경계를 나타낸다.
 
-#### Boundary coordinates
+이 tutorial에서, 우리는 두가지 종류의 box를 마주치게 될텐데 하나는 그냥 '상자'고 다른 하나는 경계상자(bounding box)다. 그러나 모든 상자가 이미지 위에서 표현되고 우리는 위치, 모양, 크기 또 다른 속성등을 측정할 필요가 있다.
 
-The most obvious way to represent a box is by the pixel coordinates of the `x` and `y` lines that constitute its boundaries.
+#### 경계 좌표(Boundary coordinates)
+
+상자를 나타내기 위해 가장 명확한 방법은 그것의 경계에 있는 pixel의 'x', 'y'좌표 줄에 의해서 구성됩니다. 
 
 ![](./img/bc1.PNG)
 
-The boundary coordinates of a box are simply **`(x_min, y_min, x_max, y_max)`**.
+경계좌표는 간단하게 오른쪽과 같이 표현됩니다.  **`(x_min, y_min, x_max, y_max)`**.
 
-But pixel values are next to useless if we don't know the actual dimensions of the image.
-A better way would be to represent all coordinates is in their _fractional_ form.
+그런데 만약 우리가 이미지의 크기가 달라져서 실제 크기를 모른다면 픽셀 값은 쓸모 없어진다. 좋은 방법은 모든 좌표를 0~1사이의 숫자로 표현해 놓는 것이다.
 
 ![](./img/bc2.PNG)
 
-Now the coordinates are size-invariant and all boxes across all images are measured on the same scale.
+이제 좌표는 크기 불변임과 동시에 모든 상자가 모든 이미지에서 같은 scale로 측정가능하다. 
 
-#### Center-Size coordinates
+#### 중심-크기 좌표(Center-Size coordinates)
 
-This is a more explicit way of representing a box's position and dimensions.
+이건 상자의 위치와 크기를 나타내는 좀더 명확한 방법입니다. 
 
 ![](./img/cs.PNG)
 
-The center-size coordinates of a box are **`(c_x, c_y, w, h)`**.
+상자의 중심-크기 좌표는 오른쪽과 같습니다. **`(c_x, c_y, w, h)`**.
 
-In the code, you will find that we routinely use both coordinate systems depending upon their suitability for the task, and _always_ in their fractional forms.
+코드안에서, 당신은 우리가 반복적으로 이 작업에 적합한 두 가지 좌표시스템을 사용하는 것을 볼 수 있을 것이다. 그리고 항상 이 것은 0~1 사이의 값으로 표현되어 있을 것이다. (always in their fractional forms)
 
-#### Jaccard Index
+#### Intersection-over-Union(IoU) or Jaccard Index 
 
-The Jaccard Index or Jaccard Overlap or Intersection-over-Union (IoU) measure the **degree or extent to which two boxes overlap**.
+Jaccard Index 또는 Jaccard Overlap 또는 Intersection-over-Union (IoU)으로 불리는 이것은 **두 상자의 중첩되는 범위 혹은 정도를** 측정한다.
 
 ![](./img/jaccard.jpg)
 
-An IoU of `1` implies they are the _same_ box, while a value of `0` indicates they're mutually exclusive spaces.
+IoU가 1인것은 같은 상자임을 의미한다. 반면 0일 경우 겹치는 공간이 하나도 없는 서로 관련 없은 상자임을 말한다.
 
-It's a simple metric, but also one that finds many applications in our model.
+이건 간단한 metric이지만 우리 application의 다양한 곳에서 발견할수 있는 지표입니다.
 
 ### Multibox
 
-Multibox is a technique for detecting objects where a prediction consists of two components –
+Multibox는 객체를 검출하는 기술로 이것의 예측은 두가지로 구성요소를 가지고 있습니다.
 
-- **Coordinates of a box that may or may not contain an object**. This is a _regression_ task.
+- **객체를 포함할수도 포함하지 않을수도 있는 상자의 좌표**. 이것은 회귀(_regression_) 문제 입니다.
 
-- **Scores for various object types for this box**, including a _background_ class which implies there is no object in the box. This is a _classification_ task.
+- **이 상자의 다양한 객체 종류에 대한 점수**, 상자속에 객체가 없음을 의미하는 배경 class를 포함해서. 이건 분류(_classification_) 문제입니다.
 
 ### Single Shot Detector (SSD)
 
-The SSD is a purely convolutional neural network (CNN) that we can organize into three parts –
+SSD는 3단계로 구성된 순수한 Convolution Neural Network(CNN)입니다.
 
-- __Base convolutions__ derived from an existing image classification architecture that will provide lower-level feature maps.
+- __Base(기본) convolutions__ : 낮은 수준의 feature map들을 제공하기 위한 기존에 존재하던 이미지 분류 구조로부터 가져온 Convolution (= ImageNet Chellenge의 Classification을 미리 학습해둔 것들을 말한다.)
 
-- __Auxiliary convolutions__ added on top of the base network that will provide higher-level feature maps.
+- __Auxiliary(보조) convolutions__ : Base network의 상단에 붙이는 것으로 높은 수준의 feature maps을 제공한다.
 
-- __Prediction convolutions__ that will locate and identify objects in these feature maps.
+
+- __Prediction(예측) convolutions__ : feature maps에서 객체의 위치를 찾고 식별합니다.
 
 The paper demonstrates two variants of the model called the SSD300 and the SSD512. The suffixes represent the size of the input image. Although the two networks differ slightly in the way they are constructed, they are in principle the same. The SSD512 is just a larger network and results in marginally better performance.
 
