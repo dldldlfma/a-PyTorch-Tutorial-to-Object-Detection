@@ -185,7 +185,10 @@ SSD는 3단계로 구성된 순수한 Convolution Neural Network(CNN)입니다.
 
 The paper demonstrates two variants of the model called the SSD300 and the SSD512. The suffixes represent the size of the input image. Although the two networks differ slightly in the way they are constructed, they are in principle the same. The SSD512 is just a larger network and results in marginally better performance.
 
-For convenience, we will deal with the SSD300.
+논문에서는 SSD300 과 SSD512라고 불리는 모델을 증명했습니다. 접미사(사진 위의 숫자)는 입력이미지의 크기를 말합니다. 비록 두 네트워크의 구성이 약간 다르지만 원리는 같습니다.그저 SSD512의 네트워크가 조금 더 크고 성능이 약간 좋을 뿐입니다.
+
+
+편의를 위해서 우리는 SSD300을 다뤄볼겁니다.
 
 ### Base Convolutions – part 1
 
