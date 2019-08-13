@@ -13,21 +13,21 @@ I'm using `PyTorch 0.4` in `Python 3.6`.
 
 # Contents
 
-[***Objective***](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Object-Detection#objective)
+[***Objective***](https://github.com/dldldlfma/pytorch_tutorial_ssd#objective)
 
-[***Concepts***](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Object-Detection#concepts)
+[***Concepts***](https://github.com/dldldlfma/pytorch_tutorial_ssd#concepts)
 
-[***Overview***](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Object-Detection#overview)
+[***Overview***](https://github.com/dldldlfma/pytorch_tutorial_ssd#overview)
 
-[***Implementation***](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Object-Detection#implementation)
+[***Implementation***](https://github.com/dldldlfma/pytorch_tutorial_ssd#implementation)
 
-[***Training***](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Object-Detection#training)
+[***Training***](https://github.com/dldldlfma/pytorch_tutorial_ssd#training)
 
-[***Evaluation***](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Object-Detection#evaluation)
+[***Evaluation***](https://github.com/dldldlfma/pytorch_tutorial_ssd#evaluation)
 
-[***Inference***](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Object-Detection#inference)
+[***Inference***](https://github.com/dldldlfma/pytorch_tutorial_ssd#inference)
 
-[***Frequently Asked Questions***](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Object-Detection#faqs)
+[***Frequently Asked Questions***](https://github.com/dldldlfma/pytorch_tutorial_ssd#faqs)
 
 # Objective
 
@@ -120,7 +120,7 @@ I'm using `PyTorch 0.4` in `Python 3.6`.
 # Overview
 
 
-여기서는, 이 모델을 설명할 것이다. 만약 너가 이미 이것에 대해 잘알고 있다면, 여기를 생략하고 [Implementation](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Object-Detection#implementation) section이나 the commented code로 넘어가도 좋다.
+여기서는, 이 모델을 설명할 것이다. 만약 너가 이미 이것에 대해 잘알고 있다면, 여기를 생략하고 [Implementation](https://github.com/dldldlfma/pytorch_tutorial_ssd#implementation) section이나 the commented code로 넘어가도 좋다.
 
 이 과정에서, 당신은 SSD가 매우 구체적인 구조와 공식을 가지고 있을수 있도록 하는 정당한 공학적 과정이 있음을 알 수 있을 것이다.어떤 부분이 처음에는 무의미하거나 인위적으로 보일수도 있지만,이 것은 이 분야에서 몇년동안(종종 경험적으로) 긴 연구를 통해 만들어진 것임을 기억하자.
 
@@ -183,8 +183,6 @@ SSD는 3단계로 구성된 순수한 Convolution Neural Network(CNN)입니다.
 
 - __Prediction(예측) convolutions__ : feature maps에서 객체의 위치를 찾고 식별합니다.
 
-The paper demonstrates two variants of the model called the SSD300 and the SSD512. The suffixes represent the size of the input image. Although the two networks differ slightly in the way they are constructed, they are in principle the same. The SSD512 is just a larger network and results in marginally better performance.
-
 논문에서는 SSD300 과 SSD512라고 불리는 모델을 증명했습니다. 접미사(사진 위의 숫자)는 입력이미지의 크기를 말합니다. 비록 두 네트워크의 구성이 약간 다르지만 원리는 같습니다.그저 SSD512의 네트워크가 조금 더 크고 성능이 약간 좋을 뿐입니다.
 
 
@@ -192,21 +190,27 @@ The paper demonstrates two variants of the model called the SSD300 and the SSD51
 
 ### Base Convolutions – part 1
 
-First of all, why use convolutions from an existing network architecture?
+첫째로, 왜 기존에 존재하던 network architecture의 Convolution을 가져다가 사용하는 걸까?
 
-Because models proven to work well with image classification are already pretty good at capturing the basic essence of an image. The same convolutional features are useful for object detection, albeit in a more _local_ sense – we're less interested in the image as a whole than specific regions of it where objects are present.
+기존의 학습된 network architecture가 image classification에서 이미지의 본질을 잘 잡아내는 것이 이미 증명되어 있기 때문입니다.
 
-There's also the added advantage of being able to use layers pretrained on a reliable classification dataset. As you may know, this is called **Transfer Learning**. By borrowing knowledge from a different but closely related task, we've made progress before we've even begun.
+비록 object detection은 이미지 전체보다는 물체가 들어있는 특정영역에 더 관심이 있지만 
+이미 학습된 CNN 모델의 Convolutional 특징은 object detection에 유용합니다.
 
-The authors of the paper employ the **VGG-16 architecture** as their base network. It's rather simple in its original form.
+또 다른 장점으로, classification dataset을 통해서 안정적으로 학습되어 있는 layer를 사용한다는 것이 있습니다. 당신은 이미 알겠지만 이걸 **Transfer Learning**이라고 합니다. 
+
+비록 detection과 다른 classification으로 학습된 네트워크를 가져온것이지만 이건 여전히 깊은 관계가 있습니다. 이러한 과정을 통해서 시작도하기전에 큰 진전을 이뤄냈습니다.
+
+이 논문의 작가는 **VGG-16 architecture**를 base network로 차용하였습니다. 이것은 original form보다는 간단하게 되어 있습니다.
 
 ![](./img/vgg16.PNG)
 
-They recommend using one that's pretrained on the _ImageNet Large Scale Visual Recognition Competition (ILSVRC)_ classification task. Luckily, there's one already available in PyTorch, as are other popular architectures. If you wish, you could opt for something larger like the ResNet. Just be mindful of the computational requirements.  
+저자는 ImageNet Large Scale Visual Recognition Competition(ILSVRC)의 classification 부분에 대해서 미리 학습된 모델을 사용하는 것을 추천합니다. 운이 좋게도 이미 학습된 유명한 구조의 모델들을 Pytorch에서 사용할 수 있습니다. 당신이 원한다면 더 큰사이즈의 모델인 ResNet을 사용할수 있습니다. 그럴땐 많은 계산이 필요할수 도 있음을 염두해 두세요.
 
-As per the paper, **we've to make some changes to this pretrained network** to adapt it to our own challenge of object detection. Some are logical and necessary, while others are mostly a matter of convenience or preference.
+논문에 따라서 **우린 이미 학습된 네트워크를 약간 변형하여** 우리의 object detection에 채택할 것 입니다. 이미 학습된 네트워크를 적용함에 있어 어떤 부분은 논리적으로 필요하지만, 어떤 부분은 편의나 선호에 의한 것일 수 있습니다.
 
-- The **input image size** will be `300, 300`, as stated earlier.
+
+- **입력 이미지 크기** 는 (300,300) 으로 시작합니다. 
 
 - The **3rd pooling layer**, which halves dimensions, will use the mathematical `ceiling` function instead of the default `floor` function in determining output size. This is significant only if the dimensions of the preceding feature map are odd and not even. By looking at the image above, you could calculate that for our input image size of `300, 300`, the `conv3_3` feature map will be of cross-section `75, 75`, which is halved to `38, 38` instead of an inconvenient `37, 37`.
 
