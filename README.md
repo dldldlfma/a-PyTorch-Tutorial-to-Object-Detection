@@ -212,45 +212,45 @@ SSD는 3단계로 구성된 순수한 Convolution Neural Network(CNN)입니다.
 
 - **입력 이미지 크기** 는 (300,300) 으로 시작합니다. 
 
-- The **3rd pooling layer**, which halves dimensions, will use the mathematical `ceiling` function instead of the default `floor` function in determining output size. This is significant only if the dimensions of the preceding feature map are odd and not even. By looking at the image above, you could calculate that for our input image size of `300, 300`, the `conv3_3` feature map will be of cross-section `75, 75`, which is halved to `38, 38` instead of an inconvenient `37, 37`.
+- 크기를 반으로 만드는 **3번째 pooling layer**는, 출력 크기를 결정하기 위해서 `ceiling`이라고 부르는 함수를 `floor` 라고 불리는 기본 함수대신 사용합니다. 이것은 이전 feature map의 차원이 짝수가 아닌 홀수인 경우에 중요합니다. 위에서 image를 봄으로써, 당신은 `300, 300`이라는 input image 사이즈를 계산할 수 있습니다. the `conv3_3`의 feature map은 cross-section의 `75, 75`이 될것이고, 이것의 절반은 `37, 37`대신 `38, 38`이 될겁니다.
 
-- We modify the **5th pooling layer** from a `2, 2` kernel and `2` stride to a `3, 3` kernel and `1` stride. The effect this has is it no longer halves the dimensions of the feature map from the preceding convolutional layer.
+- 우리는 **5th pooling layer**를 수정합니다. 기존에 `2, 2` kernel 사이즈에 stride `2` 로 진행 했던 것을 `3, 3` kernel size에 stride `1` 수정합니다. 수정으로 인해 더 이상 Convolution layer를 진행하면서 feature map의 크기가 절반으로 줄어 들지 않습니다.
 
-- We don't need the fully connected (i.e. classification) layers because they serve no purpose here. We will toss `fc8` away completely, but choose to **_rework_ `fc6` and `fc7` into convolutional layers `conv6` and `conv7`**.
+- 우리는 분류를 하는 것이 아니기 때문에 더 이상 fully-connected layer가 필요하지 않습니다. 그래서 우리는 `fc8` layer는 완전히 버립니다. 그런데 선택적으로 **`fc6` layer와  `fc7` layer는 convolution layer로 변환합니다. 그리고 그건 앞으로 `conv6` and `conv7` 라고 부를겁니다.**.
 
-The first three modifications are straightforward enough, but that last one probably needs some explaining.
+위 3가지 수정은 간단하지만 마지막에 위치한 FC-> Convolutional layer는 설명이 필요해 보입니다.
 
 ### FC → Convolutional Layer
 
-How do we reparameterize a fully connected layer into a convolutional layer?
+우린 어떻게 Fully Connected layer를 Convolution layer로 대체 할수 있을까요?
 
-Consider the following scenario.
+아래 시나리오(Scenario)를 따라가봅시다.
 
-In the typical image classification setting, the first fully connected layer cannot operate on the preceding feature map or image _directly_. We'd need to flatten it into a 1D structure.
+일반적인 image classification setting에서 첫번째 Fully Connected layer는 featrue map이나 image를 바로 받아서 동작할수 없고 **flatten**이라는 과정을 거쳐서 1D structure로 변환한 뒤에 적용할수 있게 됩니다.
 
 ![](./img/fcconv1.jpg)
 
-In this example, there's an image of dimensions `2, 2, 3`, flattened to a 1D vector of size `12`. For an output of size `2`, the fully connected layer computes two dot-products of this flattened image with two vectors of the same size `12`. **These two vectors, shown in gray, are the parameters of the fully connected layer.**
+이 예제에서, `2x2x3`에 해당하는 이미지를 사용합니다. **flattened**된 이미지는 1D vector로 크기가 `12`가 됩니다. 출력의 크기가 `2`인 Fully connected layer는 flattened image인 길이 `12`의 이미지에 대해 2번의 dot-products 를 진행합니다. **두번의 dot product시에 사용되는 1D vector는, 회색으로, 이것의 parameter들은 fully-connected layer의 parameter들 입니다.**
 
-Now, consider a different scenario where we use a convolutional layer to produce `2` output values.
+이제 Convolution layer를 이용해서 같은 수의  output을 만들어내는 시나리오(Senario2) 를 고려해 봅시다.
 
 ![](./img/fcconv2.jpg)
 
-Here, the image of dimensions `2, 2, 3` need not be flattened, obviously. The convolutional layer uses two filters with `12` elements in the same shape as the image to perform two dot products. **These two filters, shown in gray, are the parameters of the convolutional layer.**
+여기 차원이 `2x2x3`인 이미지가 있습니다. 이제는 확실히 flattened이 필요하지 않습니다. 여기서 Convolutional layer는 image와 동일한 모양의 `12`의 element를 가지고 있는 2개의 layer를 통해서 진행됩니다. **이 두개의 filter는 회색으로 표시되어 있습니다. 이건 Convolution layer의 parameter들 입니다.**
 
-But here's the key part – **in both scenarios, the outputs `Y_0` and `Y_1` are the same!**
+이 두가지에서 꼭 확인해야 하는 것은 **두개의 시나리오 속 출력 `Y_0`와 `Y_1`는 같다는 것 입니다.**
 
 ![](./img/fcconv3.jpg)
 
-The two scenarios are equivalent.
+두개의 시나리오(Scenario1 and Senario2)는 동일 합니다.
 
-What does this tell us?
+이건 무엇을 말할까요?
 
-That **on an image of size `H, W` with `I` input channels, a fully connected layer of output size `N` is equivalent to a convolutional layer with kernel size equal to the image size `H, W` and `N` output channels**, provided that the parameters of the fully connected network `N, H * W * I` are the same as the parameters of the convolutional layer `N, H, W, I`.
+**`H, W` with `I`의 크기를 가지는 input image와 output의 크기가 `N`인 fully-connected layer는 convolution layer의 크기가 input image의 크기인 `H, W`와 같고 출력 채널이 `N` 으로 같은 경우와 동일 합니다.** 주어진 fully connected network의 parameter인 `N, H * W * I`에 해당 하는 값은 컨벌루션의 `N, H, W, I`에 해당하는 값과 같습니다.
 
 ![](./img/fcconv4.jpg)
 
-Therefore, any fully connected layer can be converted to an equivalent convolutional layer simply **by reshaping its parameters**.
+그러므로 fully connected layer는 parameter reshape를 통해 간단하게 동등한 convolution layer로 전환 될 수 있습니다.
 
 ### Base Convolutions – part 2
 
