@@ -254,23 +254,24 @@ SSD는 3단계로 구성된 순수한 Convolution Neural Network(CNN)입니다.
 
 ### Base Convolutions – part 2
 
-We now know how to convert `fc6` and `fc7` in the original VGG-16 architecture into `conv6` and `conv7` respectively.
+우린 이제 기존의 VGG-16 구조에 있는 `fc6`와 `fc7`이 `conv6`와 `conv7`으로 어떻게 바뀔수 있는지를 알고 있습니다. 
 
-In the ImageNet VGG-16 [shown previously](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Object-Detection#base-convolutions--part-1), which operates on images of size `224, 224, 3`, you can see that the output of `conv5_3` will be of size `7, 7, 512`. Therefore –
+입력 이미지의 크기가 `224,224,3`인 ImageNet VGG-16 [shown previously](https://github.com/dldldlfma/pytorch_tutorial_ssd#base-convolutions--part-1) 에서 우리는 `conv5_3`의 출력이 `7, 7, 512`이 되는 것을 확인 할수 있습니다.
+그러므로 -
 
-- `fc6` with a flattened input size of `7 * 7 * 512` and an output size of `4096` has parameters of dimensions `4096, 7 * 7 * 512`. **The equivalent convolutional layer `conv6` has a `7, 7` kernel size and `4096` output channels, with reshaped parameters of dimensions `4096, 7, 7, 512`.**
+- 펼쳐진 입력 크기가 `7 * 7 * 512`인 `fc6` 그리고 `4096`의 출력크기는 `4096, 7 * 7 * 512` 라는 차원을 가집니다. **동등한 Convolutional Layer `conv6`는 `7, 7`의 kernel size와 `4096`의 출력채널을 가지는데 해당 kernel의 parameter 값의 차원은 기존 `fc6`의 parameter를 reshape한 형태인 `4096, 7, 7, 512` 입니다.**
 
-- `fc7` with an input size of `4096` (i.e. the output size of `fc6`) and an output size `4096` has parameters of dimensions `4096, 4096`. The input could be considered as a `1, 1` image with `4096` input channels. **The equivalent convolutional layer `conv7` has a `1, 1` kernel size and `4096` output channels, with reshaped parameters of dimensions `4096, 1, 1, 4096`.**
+- 입력 크기가 `4096`(i.e. `fc6`의 출력 크기)이고 출력 크기가 `4096`인 `fc7`의 parameter는 `4096, 4096`의 차원을 가집니다. 입력은 `1, 1`크기에 `4096`의 입력 채널을 갖는 이미지로 고려될 수 있습니다. **동등한 Convolutional layer `conv7`은 `1, 1`의 kernel size와 `4096` 의 output channel을 가지는데 이는 기존의 `fc7`의 parameter를 reshape한 형태인 `4096, 1, 1, 4096`입니다.**
 
-We can see that `conv6` has `4096` filters, each with dimensions `7, 7, 512`, and `conv7` has `4096` filters, each with dimensions `1, 1, 4096`.
+우리는 `conv6`가 `7, 7, 512`크기의 `4096`개의 필터를 가지고 있는 것을 볼수 있습니다. 그리고 `conv7`은 `1, 1, 4096`크기의 `4096`개 필터들을 가지고 있는 것도 볼수 있습니다.
 
-These filters are numerous and large – and computationally expensive.
+이 필터들은 엄청나게 크고 – 계산할 양이 너무 많습니다.
 
 To remedy this, the authors opt to **reduce both their number and the size of each filter by subsampling parameters** from the converted convolutional layers.
 
 - `conv6` will use `1024` filters, each with dimensions `3, 3, 512`. Therefore, the parameters are subsampled from `4096, 7, 7, 512` to `1024, 3, 3, 512`.
 
-- `conv6` will use `1024` filters, each with dimensions `1, 1, 1024`. Therefore, the parameters are subsampled from `4096, 1, 1, 4096` to `1024, 1, 1, 1024`.
+- `conv7` will use `1024` filters, each with dimensions `1, 1, 1024`. Therefore, the parameters are subsampled from `4096, 1, 1, 4096` to `1024, 1, 1, 1024`.
 
 Based on the references in the paper, we will **subsample by picking every `m`th parameter along a particular dimension**, in a process known as [_decimation_](https://en.wikipedia.org/wiki/Downsampling_(signal_processing)).  
 
