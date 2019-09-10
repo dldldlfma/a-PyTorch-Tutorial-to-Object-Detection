@@ -267,33 +267,41 @@ SSD는 3단계로 구성된 순수한 Convolution Neural Network(CNN)입니다.
 
 이 필터들은 엄청나게 크고 – 계산할 양이 너무 많습니다.
 
-To remedy this, the authors opt to **reduce both their number and the size of each filter by subsampling parameters** from the converted convolutional layers.
+이 문제를 해결 하기 위해서 , 저자는 전환된 Convolutional layer들에서 **subsampling parameters를 이용해서 각 필터에 맞게 그들의 숫자와 크기를 줄이는 방법**을 선택했습니다.
 
-- `conv6` will use `1024` filters, each with dimensions `3, 3, 512`. Therefore, the parameters are subsampled from `4096, 7, 7, 512` to `1024, 3, 3, 512`.
+- `conv6`는 `1024`개의 filter들을 `3, 3, 512`에 해당하는 각 차원에 대해 사용할 것입니다. 그러므로, parameter들은 `4096, 7, 7, 512`에서 `1024, 3, 3, 512`로 subsample 됩니다.
 
 - `conv7` will use `1024` filters, each with dimensions `1, 1, 1024`. Therefore, the parameters are subsampled from `4096, 1, 1, 4096` to `1024, 1, 1, 1024`.
 
-Based on the references in the paper, we will **subsample by picking every `m`th parameter along a particular dimension**, in a process known as [_decimation_](https://en.wikipedia.org/wiki/Downsampling_(signal_processing)).  
+- `conv7`는 `1024`개의 필터들을, `1, 1, 1024`의 각 차원에 대해 사용합니다. 그러므로 parameter들은 `4096, 1, 1, 4096`에서 `1024, 1, 1, 1024`로 subsample 됩니다.
+
+논문의 참조에 따르면, 우리는 [_decimation_](https://en.wikipedia.org/wiki/Downsampling_(signal_processing))라고 알려진 **특별한 차원에 속한 `m`번째 파라미터마다 골라 내는 방식으로 subsample을 수행할 것입니다.** => (`m`번째 파라미터만 남긴다).
 
 Since the kernel of `conv6` is decimated from `7, 7` to `3,  3` by keeping only every 3rd value, there are now _holes_ in the kernel. Therefore, we would need to **make the kernel dilated or _atrous_**.
 
-This corresponds to a dilation of `3` (same as the decimation factor `m = 3`). However, the authors actually use a dilation of `6`, possibly because the 5th pooling layer no longer halves the dimensions of the preceding feature map.
+3번째 해당하는 값마다 남기는 방식으로 `conv6`에 decimate를 수행해서 `7, 7`크기의 필터가 `3,  3`필터로 변경된 이래로, 커널에는 _빈공간_ 이 발생한다. 그래서 우리는 **kernel dilated 또는 _atrous_**로 불리는 방식을 적용한 Convolution을 사용할 필요가 있다. 아래 GIF는 3x3 filter로 5x5 convolution을 수행하는 Dilated_conv의 연산 방식이다. 
 
-We are now in a position to present our base network, **the modified VGG-16**.
+![DT](./explain_data/Dilated_conv.GIF)
+
+이것은 `3`만큼의 확장을 의미합니다. (decimation factor `m = 3`를 적용한 것과 동일). 그러나, 저자는 실제론 dilation of `6`를 적용합니다. 아마 5번째 pooling layer가 더 이상 feature map의 크기를 절반으로 줄이지 않기 때문일겁니다.
+
+우리는 이제 base network인 **수정된 VGG-16**의 형태를 제시할 수 있습니다.
 
 ![](./img/modifiedvgg.PNG)
 
-In the above figure, pay special attention to the outputs of `conv4_3` and `conv_7`. You will see why soon enough.
+위 그림에서 특별히 `conv4_3`과 `conv_7`의 출력을 집중해서 봐두시기 바랍니다. 곧 왜 이런 말을 했는지 알게 될겁니다.
 
-### Auxiliary Convolutions
+### Auxiliary Convolutions(보조 Convolution)
 
-We will now **stack some more convolutional layers on top of our base network**. These convolutions provide additional feature maps, each progressively smaller than the last.
+우린 이제 **기본 네트워크 위에 몇개의 convolution layer를 추가할 겁니다**. 이 convolution layer들은 추가적인 feature map들을 제공하고, 그 feature map 크기는 앞선 크기보다 점진적으로 작아질겁니다.
 
 ![](./img/auxconv.jpg)
 
 We introduce four convolutional blocks, each with two layers. While size reduction happened through pooling in the base network, here it is facilitated by a stride of `2` in every second layer.
 
-Again, take note of the feature maps from `conv8_2`, `conv9_2`, `conv10_2`, and `conv11_2`.
+우린 여기서 각각 2개의 layer와 함께 있는 4개의 convolutional block를 소개합니다. base network에서는 pooling layer를 통해 사이즈 감소가 일어난 반면, 추가된 4개의 convolution block에서는 block당 두번째 layer의 convolution에서 stride `2`를 이용해 사이즈 감소를 만들어 냅니다.
+
+다시 주의 깊게 `conv8_2`, `conv9_2`, `conv10_2`, 그리고 `conv11_2`의 출력을 확인해보세요.
 
 ### A detour
 
