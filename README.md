@@ -281,7 +281,7 @@ Since the kernel of `conv6` is decimated from `7, 7` to `3,  3` by keeping only 
 
 3번째 해당하는 값마다 남기는 방식으로 `conv6`에 decimate를 수행해서 `7, 7`크기의 필터가 `3,  3`필터로 변경된 이래로, 커널에는 _빈공간_ 이 발생한다. 그래서 우리는 **kernel dilated 또는 _atrous_**로 불리는 방식을 적용한 Convolution을 사용할 필요가 있다. 아래 GIF는 3x3 filter로 5x5 convolution을 수행하는 Dilated_conv의 연산 방식이다. 
 
-![DT](./explain_data/Dilated_conv.GIF)
+![](./explain_data/Dilated_conv.GIF)
 
 이것은 `3`만큼의 확장을 의미합니다. (decimation factor `m = 3`를 적용한 것과 동일). 그러나, 저자는 실제론 dilation of `6`를 적용합니다. 아마 5번째 pooling layer가 더 이상 feature map의 크기를 절반으로 줄이지 않기 때문일겁니다.
 
