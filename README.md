@@ -309,23 +309,51 @@ Before we move on to the prediction convolutions, we must first understand what 
 
 It is here that we must learn about _priors_ and the crucial role they play in the SSD.
 
+
+prediction convolutions로 넘어가기전에, 우리가 뭘 예측하는 것인지를 반드시 이해해야 합니다. 당연히 그건 객체와 객체의 위치일건데, _이게 어떤 형태로 존재하는 걸까요?_
+
+여기서 우리는 반드시 _priors_에 대해서 배우고 SSD를 수행하면서 그것이 가지고 있는 가장 중점적인 역할을 알게 될겁니다.
+
+
+
 #### Priors
 
 Object predictions can be quite diverse, and I don't just mean their type. They can occur at any position, with any size and shape. Mind you, we shouldn't go as far as to say there are _infinite_ possibilities for where and how an object can occur. While this may be true mathematically, many options are simply improbable or uninteresting. Furthermore, we needn't insist that boxes are pixel-perfect.
 
+Object predictions은 엄청 넓게 정의 될수 있습니다. 근데 이건 단순하게 type을 정의하는 문제가 아닙니다. 이건 어떤 위치에서든, 다양한 크기와 형태로 나타날수 있죠. 그렇다고 해서 우리가 예측할 대상이 정말 아무 위치에서나 등장할 수 있다고 보는 건 무리입니다. 수학적으로 그럴수는 있겠지만, 대부분의 결과는 간단하게 의미가 없거나 별 상관없는 것들입니다. 추가적으로 , 우리는 픽셀단위까지 완벽한 object detection을 구현할 필요가 없습니다.
+
 In effect, we can discretize the mathematical space of potential predictions into just _thousands_ of possibilities.
+
+문제 해결을 위해 우리는 몇 천개에 달하는 예측공간을 수학적으로 분리해둘 수 있습니다.
 
 **Priors are precalculated, fixed boxes which collectively represent this universe of probable and approximate box predictions**.
 
+**Priors는 미리 계산된 fixed box들 입니다. 이것들은 상자의 대략적 예측과 전체 공간에서의 가능성을 적절하게 표현합니다**.
+
 Priors are manually but carefully chosen based on the shapes and sizes of ground truth objects in our dataset. By placing these priors at every possible location in a feature map, we also account for variety in position.
+
+Priors는 수작업으로 하지만 조심스럽게 선택 됩니다. 선택의 기준은 우리가 사용할 데이터 셋의 객체들의 모양과 크기를 입니다. feature map에서 모든 가능성있는 위치에 대한 priors를 설정함으로써, 우리는 위치의 다양성 문제를 다룹니다. 
 
 In defining the priors, the authors specify that –
 
+priors를 정의하면서, 작가는 아래의 것들을 명확히 했습니다 –
+
 - **they will be applied to various low-level and high-level feature maps**, viz. those from `conv4_3`, `conv7`, `conv8_2`, `conv9_2`, `conv10_2`, and `conv11_2`. These are the same feature maps indicated on the figures before.
+
+- **priors는 low-level부터 high-level까지 다양한 feature map들에서 적용될수 있어야 한다**, 즉. `conv4_3`, `conv7`, `conv8_2`, `conv9_2`, `conv10_2`, 그리고 `conv11_2`에 이르는 레이어에서도 모두 적절한 형태여야 한다는 것입니다. These are the same feature maps indicated on the figures before.
+
 
 - **if a prior has a scale `s`, then its area is equal to that of a square with side `s`**. The largest feature map, `conv4_3`, will have priors with a scale of `0.1`, i.e. `10%` of image's dimensions, while the rest have priors with scales linearly increasing from `0.2` to `0.9`. As you can see, larger feature maps have priors with smaller scales and are therefore ideal for detecting smaller objects.
 
+
+- **if a prior has a scale `s`, then its area is equal to that of a square with side `s`**. 가장 큰 featrue map인 `conv4_3`는 `0.1`의 scale을 가지는 priors를 가질 것 입니다. 이 것은 이미지 차원의 `10%`를 의미하는 것이고, 반면에 나머지 layer들은 priors 그 scales이 `0.2`에서 `0.9`까지 선형적으로 증가하는 priors를 가질겁니다. 당신이 보는 것 처럼, 더 큰 feature maps은 더 작은 scale의 priors를 가지는데 이는 작은 객체를 찾아내기에 이상적 입니다.
+
+
 - **At _each_ position on a feature map, there will be priors of various aspect ratios**. All feature maps will have priors with ratios `1:1, 2:1, 1:2`. The intermediate feature maps of `conv7`, `conv8_2`, and `conv9_2` will _also_ have priors with ratios `3:1, 1:3`. Moreover, all feature maps will have *one extra prior* with an aspect ratio of `1:1` and at a scale that is the geometric mean of the scales of the current and subsequent feature map.
+
+
+- **feature map의 _각_ 위치에서, 다양한 aspect ratios를 가지는 priors를 가지게 됩니다.**. 모든 feature maps은 `1:1, 2:1, 1:2`비율의 priors를 가질겁니다. 중간에 위치한 `conv7`, `conv8_2`, 그리고 `conv9_2`의 feature maps은 추가적으로 `3:1, 1:3`비율의 priors를 가집니다. 더하여, 모든 feature maps은 `1:1` 비율인 *한개의 추가적인 prior*을 가집니다. and at a scale that is the geometric mean of the scales of the current and subsequent feature map.
+
 
 | Feature Map From | Feature Map Dimensions | Prior Scale | Aspect Ratios | Number of Priors per Position | Total Number of Priors on this Feature Map |
 | :-----------: | :-----------: | :-----------: | :-----------: | :-----------: | :-----------: |
@@ -339,23 +367,36 @@ In defining the priors, the authors specify that –
 
 There are a total of 8732 priors defined for the SSD300!
 
-#### Visualizing Priors
+SSD300은 8732개의 priors를 가지고 있습니다.
+
+#### Visualizing Priors (Priors 시각화)
 
 We defined the priors in terms of their _scales_ and _aspect ratios_.
+
+우리는 priors를 _scales_과 _aspect ratios_관점에서 정의 합니다.
 
 ![](./img/wh1.jpg)
 
 Solving these equations yields a prior's dimensions `w` and `h`.
 
+이 방정식을 풀면 prior의 `w`와 `h`가 산출 됩니다. 
+
 ![](./img/wh2.jpg)
 
 We're now in a position to draw them on their respective feature maps.
 
+이제 각각의 feature map에서 그릴수 있습니다. 
+
 For example, let's try to visualize what the priors will look like at the central tile of the feature map from `conv9_2`.
+
+예를들어 `conv9_2`에서 feature map의 중간 타일 위치에 prior의 모습을 그려봅시다.
+
 
 ![](./img/priors1.jpg)
 
 The same priors also exist for each of the other tiles.
+
+각 tile 마다 동일한 priors가 존재합니다. 
 
 ![](./img/priors2.jpg)
 
@@ -363,27 +404,57 @@ The same priors also exist for each of the other tiles.
 
 [Earlier](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Object-Detection#multibox), we said we would use regression to find the coordinates of an object's bounding box. But then, surely, the priors can't represent our final predicted boxes?
 
+[이전에](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Object-Detection#multibox), 우리가 확인한 것중에 객체 bounding box의 좌표를 찾기 위해서 Regression을 사용한다는 것이 있었습니다. 그러면 여기서, 확실하게 priors가 최종 예측 박스를 대표할 수 없을까?
+
 They don't.
+
+They don't.
+
 
 Again, I would like to reiterate that the priors represent, _approximately_, the possibilities for prediction.
 
+다시, 나는 priors의 대략적인 예측 가능성을 나타내고 싶다.
+
 This means that **we use each prior as an approximate starting point and then find out how much it needs to be adjusted to obtain a more exact prediction for a bounding box**.
+
+
+이 뜻은 **우리는 각 prior를 대략적인 시작점으로 그리고 예측된 bounding box를 얼마나 더 수정할 필요가 있는지를 확인하는 용도로 사용하는것을 의미한다.**.
+
 
 So if each predicted bounding box is a slight deviation from a prior, and our goal is to calculate this deviation, we need a way to measure or quantify it.
 
+
+그래서 만약에 예측된 bounding box 각각이 prior과 약간의 편차가 있다면, 그리고 우리의 목표가 이 편차를 계산하는 거라면 우리는 이것을 정량적으로 나타내기 위한 방법이 필요하다. 
+
 Consider a cat, its predicted bounding box, and the prior with which the prediction was made.  
+
+아래 그림의 고양이를 고려해보자, 고양이 예측 상자와 예측을 나타내는 prior가 있다.
 
 ![](./img/ecs1.PNG)
 
 Assume they are represented in center-size coordinates, which we are familiar with.
 
+이것은 우리에게 익숙한 중심 크기 좌표로 표현되어 있다고 가정합니다. 
+
+
 Then –
+
+그때
 
 ![](./img/ecs2.PNG)
 
 This answers the question we posed at the [beginning of this section](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Object-Detection#a-detour). Considering that each prior is adjusted to obtain a more precise prediction, **these four offsets `(g_c_x, g_c_y, g_w, g_h)` are the form in which we will regress bounding boxes' coordinates**.
 
+이건 [이 섹션의 시작의 질문](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Object-Detection#a-detour)에 대한 답변입니다. 
+(질문은 예측이 최종박스를 대표하도록 만들수 있을까?)
+
+각 prior은 좀더 정확한 예측으로 수정된다는 것을 고려해보자.
+**이것의 4가지 offsets인 `(g_c_x, g_c_y, g_w, g_h)`는 bonding box의 좌표를 회귀로 계산 시킬수 있도록 표현한 것입니다.**
+
 As you can see, each offset is normalized by the corresponding dimension of the prior. This makes sense because a certain offset would be less significant for a larger prior than it would be for a smaller prior.
+
+당신이 보는것 처럼, 각 offset은 prior의 해당 치수로 정규화 됩니다. 
+이것은 특정 offsets이 prior보다 작을때 보다 더 클수록 중요하지 않기 떄문입니다.
 
 ### Prediction convolutions
 
