@@ -460,7 +460,12 @@ As you can see, each offset is normalized by the corresponding dimension of the 
 
 Earlier, we earmarked and defined priors for six feature maps of various scales and granularity, viz. those from `conv4_3`, `conv7`, `conv8_2`, `conv9_2`, `conv10_2`, and `conv11_2`.
 
+앞서 우리는 크기와 세부 사항들이 다른 6가지 feature map들(conv4_3, conv7, conv8_2, conv9_2, conv10_2, conv11_2)에 대해 각각의 prior를 구분하고 정의하였습니다.
+
+
 Then, **for _each_ prior at _each_ location on _each_ feature map**, we want to predict –
+
+그 다음 **각 feature map들의 각 위치에 대한 각각의 prior**로부터 우리는 다음과 같은 사항들을 예측하기를 원합니다.
 
 - the **offsets `(g_c_x, g_c_y, g_w, g_h)`** for a bounding box.
 
